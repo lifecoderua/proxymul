@@ -10,6 +10,8 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "mime-types": "2.1.10",
+    "node-mkdirp": "0.0.1"
   },
   "repository": {
     "type": "git",

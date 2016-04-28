@@ -18,35 +18,37 @@
 // });
 
 
-var port = process.env.PORT || 5000;
-var http = require('http');
-var proxy = require('./app/proxy')
+var port = process.env.PORT || 5000,
+  http = require('http'),
+  fs = require('fs'),
+  proxy = require('./app/proxy')
 
 var util = require('util');
 
-// http.get(function(res) {
-//   res.on('data', function(chunk) {
-//     console.log(res.headers);
-//   });
-// }).end();
 
 proxy.init();
 
 function proxyResponseWrapper(res) {
   return function proxyResponse(result) {
     if (result.error) {
-        // only 404 in the moment
-      res.writeHead(404);
+      res.writeHead(result.error);
       res.end(); 
     } else {
-      res.writeHead(200, {'Content-Type': 'text/plain'});    
-      res.end( result.data );  
+      res.writeHead(200, {'Content-Type': result.contentType});    
+      var readStream = fs.createReadStream(result.path);      
+      readStream.pipe(res);  
     }    
   }
 }
 
 
 http.createServer(function (req, res) {
-    proxy.process(req, proxyResponseWrapper(res));    
+  proxy.process(req, proxyResponseWrapper(res));  
 }).listen(port);
 console.log('Server running at http://127.0.0.1:' + port);
+
+process.on('uncaughtException', function (err) {
+  console.error((new Date).toUTCString() + ' uncaughtException:', err.message);
+  console.error(err.stack);  
+  if (process.env.ENV !== 'dev') { process.exit(1); }
+})

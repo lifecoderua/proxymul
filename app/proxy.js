@@ -8,9 +8,14 @@
  *  
  */
 
-var map = {};
-var http = require('http');
-var fs = require('fs');
+var map = {},
+ http = require('http'),
+ https = require('https'),
+ fs = require('fs'),
+ mime = require('mime-types');
+
+const destBase = './public/proxy_cache/';
+
 
 function init() {
   map = require('./domains_map');
@@ -22,38 +27,48 @@ function processRequest(req, cb) {
   
   if (!targetDomain) {
     cb({ error: 404 });
-  }    
+    return;    
+  }  
   
-  content.push(`=== Welcome aboard! ===`);
-  content.push(`host ${targetDomain}`);
-  content.push(`path ${req.url}`);
-  
-  
-
-  
-  
-  cb({
-    contentType: 'text/plain',
-    data: content.join('\n')
+  proxyFile(req.url, targetDomain, function(result) {
+    console.log(result);
+    cb(result);
   });
 }
 
-function proxyFile(url, dest, cb) {
-  var file = fs.createWriteStream(dest);
-  var request = http.get(url, function(response) {
-    response.pipe(file);
-    file.on('finish', function() {
-      file.close(cb);  // close() is async, call cb after close completes.
+function proxyFile(baseUrl, targetDomain, cb) {
+  var url = [targetDomain, baseUrl].join('');
+  var dest = [destBase, baseUrl].join('');
+  
+  require('mkdirp')(urlToPath(baseUrl), function() {
+    var file = fs.createWriteStream(dest);
+    var request = fetcher(url).get(url, function(response) {
+      response.pipe(file);
+      file.on('finish', function() {
+        file.close(function() { cb({
+          contentType: mime.lookup(dest),
+          path: dest 
+        }) });  // close() is async, call cb after close completes.
+      });
+    }).on('error', function(err) { // Handle errors
+      fs.unlink(dest); // Delete the file async. (But we don't check the result)
+      if (cb) cb({ error: 404, message: err.message });
     });
-  }).on('error', function(err) { // Handle errors
-    fs.unlink(dest); // Delete the file async. (But we don't check the result)
-    if (cb) cb(err.message);
   });
+  
 }
 
+function fetcher(url) {
+  return url.match(/^https/) ? https : http;
+}
 
 function extractParts(host) {
-  return host.split(':')[0].match(/([^.]+)\.?(.*)/).splice(1).filter( function(el){ return el; } )
+  return host.split(':')[0].match(/([^.]+)\.?(.*)/).splice(1).filter( function(el){ return el; } );
+}
+
+function urlToPath(url) {
+  // return (url.match(/^.*\/\/[^\/]*\/(.*)\/.*$/) || ['']).pop();
+  return destBase + (url.match(/^\/(.*)\/.*$/) || ['']).pop();
 }
 
 function getTargetDomain(host) {
