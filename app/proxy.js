@@ -12,7 +12,8 @@ var map = {},
  http = require('http'),
  https = require('https'),
  fs = require('fs'),
- mime = require('mime-types');
+ mime = require('mime-types'),
+ path  = require('path');
 //  mkdirp = require('mkdirp'); // fails for Heroku
 
 function mkdirSync(path) {
