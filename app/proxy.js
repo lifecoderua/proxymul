@@ -31,7 +31,7 @@ function mkdirpSync(dirpath) {
   }
 }
 
-const destBase = './public/proxy_cache/';
+const destBase = './public/proxy_cache';
 
 
 function init() {
@@ -82,7 +82,7 @@ function extractParts(host) {
 }
 
 function urlToPath(url) {
-  return destBase + (url.match(/^\/(.*)\/.*$/) || ['']).pop();
+  return path.join(destBase, (url.match(/^\/(.*)\/.*$/) || ['']).pop());
 }
 
 function getTargetDomain(host) {
