@@ -18,8 +18,10 @@ var map = {},
 
 function mkdirSync(path) {
   try {
-    fs.mkdirSync(path);
+    console.log(`in ${path}`);
+    fs.mkdirSync(path);    
   } catch(e) {
+    console.log(`catch ${e}`);
     if ( e.code != 'EEXIST' ) throw e;
   }
 }
@@ -35,6 +37,7 @@ const destBase = './public/proxy_cache';
 
 
 function init() {
+  console.log('init');
   map = require('./domains_map');
 }
 
