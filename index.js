@@ -20,6 +20,7 @@
 
 var port = process.env.PORT || 5000;
 var http = require('http');
+var proxy = require('./app/proxy')
 
 var util = require('util');
 
@@ -29,14 +30,23 @@ var util = require('util');
 //   });
 // }).end();
 
-var http = require('http');
+proxy.init();
+
+function proxyResponseWrapper(res) {
+  return function proxyResponse(result) {
+    if (result.error) {
+        // only 404 in the moment
+      res.writeHead(404);
+      res.end(); 
+    } else {
+      res.writeHead(200, {'Content-Type': 'text/plain'});    
+      res.end( result.data );  
+    }    
+  }
+}
+
+
 http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    var content = [];
-    content.push(`=== Welcome aboard! ===`);
-    content.push(`host ${req.headers.host}`);
-    content.push(`path ${req.url}`);
-    res.end( content.join('\n') );
-    // res.end('Hello from app1!\n' + util.inspect(req));
+    proxy.process(req, proxyResponseWrapper(res));    
 }).listen(port);
 console.log('Server running at http://127.0.0.1:' + port);
