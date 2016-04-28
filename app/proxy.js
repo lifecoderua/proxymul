@@ -12,8 +12,7 @@ var map = {},
  http = require('http'),
  https = require('https'),
  fs = require('fs'),
- mime = require('mime-types'),
- path  = require('path');
+ mime = require('mime-types');
 //  mkdirp = require('mkdirp'); // fails for Heroku
 
 function mkdirSync(path) {
@@ -25,7 +24,7 @@ function mkdirSync(path) {
 }
 
 function mkdirpSync(dirpath) {
-  var parts = dirpath.split(path.sep);
+  var parts = dirpath.split('/');
   for( var i = 1; i <= parts.length; i++ ) {
     mkdirSync( path.join.apply(null, parts.slice(0, i)) );
   }
