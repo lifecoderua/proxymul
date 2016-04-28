@@ -85,7 +85,7 @@ function extractParts(host) {
 }
 
 function urlToPath(url) {
-  return path.join(destBase, (url.match(/^\/(.*)\/.*$/) || ['']).pop());
+  return [destBase, (url.match(/^\/(.*)\/.*$/) || [null]).pop()].filter( function(el) { return el; } ).join('/');
 }
 
 function getTargetDomain(host) {
