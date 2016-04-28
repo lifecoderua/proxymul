@@ -18,10 +18,10 @@ var map = {},
 
 function mkdirSync(path) {
   try {
-    console.log(`in ${path}`);
+    // console.log(`in ${path}`);
     fs.mkdirSync(path);    
   } catch(e) {
-    console.log(`catch ${e}`);
+    // console.log(`catch ${e}`);
     if ( e.code != 'EEXIST' ) throw e;
   }
 }
@@ -46,29 +46,28 @@ function processRequest(req, cb) {
     targetDomain = getTargetDomain(req.headers.host);
   
   if (!targetDomain) {
-    cb({ error: 404 });
-    return;    
+    return cb({ error: 404 });
   }  
   
-  proxyFile(req.url, targetDomain, function(result) {
-    console.log(result);
-    cb(result);
-  });
+  proxyFile(req.url, targetDomain, cb);
 }
 
 function proxyFile(baseUrl, targetDomain, cb) {
   var url = [targetDomain, baseUrl].join('');
   var dest = [destBase, baseUrl].join('');
-  
-  mkdirpSync(urlToPath(baseUrl));
-  var file = fs.createWriteStream(dest);
+   
   var request = fetcher(url).get(url, function(response) {
+    if (response.statusCode >= 300) {
+      return cb({ error: 404, message: `Fetch failed (${response.statusCode}) from ${url}` });
+    }
+    mkdirpSync(urlToPath(baseUrl));
+    var file = fs.createWriteStream(dest);
     response.pipe(file);
     file.on('finish', function() {
       file.close(function() { cb({
         contentType: mime.lookup(dest),
         path: dest 
-      }) });  // close() is async, call cb after close completes.
+      }) });
     });
   }).on('error', function(err) { // Handle errors
     fs.unlink(dest); // Delete the file async. (But we don't check the result)
