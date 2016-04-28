@@ -13,7 +13,23 @@ var map = {},
  https = require('https'),
  fs = require('fs'),
  mime = require('mime-types'),
- mkdirp = require('mkdirp');
+ path  = require('path');
+//  mkdirp = require('mkdirp'); // fails for Heroku
+
+function mkdirSync(path) {
+  try {
+    fs.mkdirSync(path);
+  } catch(e) {
+    if ( e.code != 'EEXIST' ) throw e;
+  }
+}
+
+function mkdirpSync(dirpath) {
+  var parts = dirpath.split(path.sep);
+  for( var i = 1; i <= parts.length; i++ ) {
+    mkdirSync( path.join.apply(null, parts.slice(0, i)) );
+  }
+}
 
 const destBase = './public/proxy_cache/';
 
@@ -41,22 +57,20 @@ function proxyFile(baseUrl, targetDomain, cb) {
   var url = [targetDomain, baseUrl].join('');
   var dest = [destBase, baseUrl].join('');
   
-  mkdirp(urlToPath(baseUrl), function() {
-    var file = fs.createWriteStream(dest);
-    var request = fetcher(url).get(url, function(response) {
-      response.pipe(file);
-      file.on('finish', function() {
-        file.close(function() { cb({
-          contentType: mime.lookup(dest),
-          path: dest 
-        }) });  // close() is async, call cb after close completes.
-      });
-    }).on('error', function(err) { // Handle errors
-      fs.unlink(dest); // Delete the file async. (But we don't check the result)
-      if (cb) cb({ error: 404, message: err.message });
+  mkdirpSync(urlToPath(baseUrl));
+  var file = fs.createWriteStream(dest);
+  var request = fetcher(url).get(url, function(response) {
+    response.pipe(file);
+    file.on('finish', function() {
+      file.close(function() { cb({
+        contentType: mime.lookup(dest),
+        path: dest 
+      }) });  // close() is async, call cb after close completes.
     });
+  }).on('error', function(err) { // Handle errors
+    fs.unlink(dest); // Delete the file async. (But we don't check the result)
+    if (cb) cb({ error: 404, message: err.message });
   });
-  
 }
 
 function fetcher(url) {
@@ -68,7 +82,6 @@ function extractParts(host) {
 }
 
 function urlToPath(url) {
-  // return (url.match(/^.*\/\/[^\/]*\/(.*)\/.*$/) || ['']).pop();
   return destBase + (url.match(/^\/(.*)\/.*$/) || ['']).pop();
 }
 
