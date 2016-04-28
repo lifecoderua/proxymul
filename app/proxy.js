@@ -12,7 +12,8 @@ var map = {},
  http = require('http'),
  https = require('https'),
  fs = require('fs'),
- mime = require('mime-types');
+ mime = require('mime-types'),
+ mkdirp = require('mkdirp');
 
 const destBase = './public/proxy_cache/';
 
@@ -40,7 +41,7 @@ function proxyFile(baseUrl, targetDomain, cb) {
   var url = [targetDomain, baseUrl].join('');
   var dest = [destBase, baseUrl].join('');
   
-  require('mkdirp')(urlToPath(baseUrl), function() {
+  mkdirp(urlToPath(baseUrl), function() {
     var file = fs.createWriteStream(dest);
     var request = fetcher(url).get(url, function(response) {
       response.pipe(file);
