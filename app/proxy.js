@@ -13,15 +13,13 @@ var map = {},
  https = require('https'),
  fs = require('fs'),
  mime = require('mime-types'),
- path  = require('path');
-//  mkdirp = require('mkdirp'); // fails for Heroku
+ path = require('path'),
+ conf = require('./config');
 
 function mkdirSync(path) {
   try {
-    // console.log(`in ${path}`);
     fs.mkdirSync(path);    
   } catch(e) {
-    // console.log(`catch ${e}`);
     if ( e.code != 'EEXIST' ) throw e;
   }
 }
@@ -38,13 +36,29 @@ const destBase = './public/proxy_cache';
 
 function init() {
   console.log('init');
-  map = require('./domains_map');
+  console.log( conf.proxyMapUrl );
+  fetcher(conf.proxyMapUrl).get(conf.proxyMapUrl, function(res) {
+    var body = '';
+    res.on('data', function(chunk) {
+      body += chunk;
+    });
+    res.on('end', function() {
+      map = JSON.parse(body);
+      console.log(map);
+    });
+  }).on('error', function() {
+    console.log('Failed to load proxy map');
+  });
 }
 
 function processRequest(req, cb) {
   var content = [],
     targetDomain = getTargetDomain(req.headers.host);
   
+  if (map == {}) {
+    console.log('map is not loaded yet');
+    return cb({ error: 404 });
+  }
   if (!targetDomain) {
     return cb({ error: 404 });
   }  
@@ -69,8 +83,8 @@ function proxyFile(baseUrl, targetDomain, cb) {
         path: dest 
       }) });
     });
-  }).on('error', function(err) { // Handle errors
-    fs.unlink(dest); // Delete the file async. (But we don't check the result)
+  }).on('error', function(err) {
+    fs.unlink(dest);
     if (cb) cb({ error: 404, message: err.message });
   });
 }
