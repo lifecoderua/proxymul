@@ -31,7 +31,7 @@ function mkdirpSync(dirpath) {
   }
 }
 
-const destBase = './public/proxy_cache';
+const destBase = conf.cachePath;
 
 
 function init() {
@@ -53,7 +53,7 @@ function init() {
 
 function processRequest(req, cb) {
   var content = [],
-    targetDomain = getTargetDomain(req.headers.host);
+    targetDomain = getTargetDomain(req.headers[conf.header]);
   
   if (map == {}) {
     console.log('map is not loaded yet');

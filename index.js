@@ -18,7 +18,8 @@
 // });
 
 
-var port = process.env.PORT || 5000,
+var conf = require('./app/config'), 
+  port = process.env.PORT || conf.port,
   http = require('http'),
   fs = require('fs'),
   proxy = require('./app/proxy')
