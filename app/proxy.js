@@ -8,8 +8,6 @@
  *  
  */
 
-// ToDo: log to file
-
 var map = {},
  http = require('http'),
  https = require('https'),
