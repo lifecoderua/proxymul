@@ -51,5 +51,5 @@ console.log('Server running at http://127.0.0.1:' + port);
 process.on('uncaughtException', function (err) {
   console.error((new Date).toUTCString() + ' uncaughtException:', err.message);
   console.error(err.stack);  
-  if (process.env.ENV !== 'dev') { process.exit(1); }
+  // if (process.env.ENV !== 'dev') { process.exit(1); }
 })
