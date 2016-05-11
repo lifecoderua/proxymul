@@ -8,8 +8,6 @@
  *  
  */
 
-// ToDo: prepend storage path with the domain
-// ToDo: floating issue with folder/file operation handling (empty filename?)
 // ToDo: log to file
 
 var map = {},
@@ -39,8 +37,6 @@ const destBase = conf.cachePath;
 
 
 function init() {
-  console.log('init');
-  console.log( conf.proxyMapUrl );
   fetcher(conf.proxyMapUrl).get(conf.proxyMapUrl, function(res) {
     var body = '';
     res.on('data', function(chunk) {
@@ -57,28 +53,31 @@ function init() {
 
 function processRequest(req, cb) {
   var content = [],
-    targetDomain = getTargetDomain(req.headers[conf.header]);
+    sourceDomain = getSourceDomain(req.headers[conf.header]);
   
   if (map == {}) {
     console.log('map is not loaded yet');
     return cb({ error: 404 });
   }
-  if (!targetDomain) {
+  if (!sourceDomain) {
     return cb({ error: 404 });
   }  
   
-  proxyFile(req.url, targetDomain, cb);
+  proxyFile(req.url, sourceDomain, cb);
 }
 
-function proxyFile(baseUrl, targetDomain, cb) {
-  var url = [targetDomain, baseUrl].join('');
-  var dest = [destBase, baseUrl.split(/[?#]/)[0]].join('');
+function proxyFile(baseUrl, sourceDomain, cb) {
+  var url = [map[sourceDomain], baseUrl].join('');
+  // ToDo: use `path` if viable  
+  var cleanDest = baseUrl.split(/[?#]/)[0];
+  if (cleanDest[cleanDest.length-1] == '/') { cleanDest += 'x--root.html'; }
+  var dest = [destBase, '/', sourceDomain, cleanDest].join('');
    
   var request = fetcher(url).get(url, function(response) {
     if (response.statusCode >= 300) {
       return cb({ error: 404, message: `Fetch failed (${response.statusCode}) from ${url}` });
     }
-    mkdirpSync(urlToPath(baseUrl));
+    mkdirpSync(urlToPath(baseUrl, sourceDomain));
     var file = fs.createWriteStream(dest);
     response.pipe(file);
     file.on('finish', function() {
@@ -101,17 +100,17 @@ function extractParts(host) {
   return host.split(':')[0].match(/([^.]+)\.?(.*)/).splice(1).filter( function(el){ return el; } );
 }
 
-function urlToPath(url) {
-  return [destBase, (url.match(/^\/(.*)\/.*$/) || [null]).pop()].filter( function(el) { return el; } ).join('/');
+function urlToPath(url, sourceDomain) {
+  return [destBase, sourceDomain, (url.match(/^\/(.*)\/.*$/) || [null]).pop()].filter( function(el) { return el; } ).join('/');
 }
 
-function getTargetDomain(host) {
+function getSourceDomain(host) {
   var parts = extractParts(host);
-  return getMap(parts[parts.length - 1]) || getMap(parts.join('.')) || null; 
+  return checkMappedDomain(parts[parts.length - 1]) || checkMappedDomain(parts.join('.')) || null; 
 }
 
-function getMap(domain) {
-  return map[domain];
+function checkMappedDomain(domain) {
+  return map[domain] ? domain : null;
 }
 
 module.exports = {
