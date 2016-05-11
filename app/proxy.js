@@ -26,6 +26,7 @@ function mkdirSync(path) {
 
 function mkdirpSync(dirpath) {
   var parts = dirpath.split('/');
+  if (dirpath[0] == '/') { parts[0] = '/' + parts[0]; } 
   for( var i = 1; i <= parts.length; i++ ) {
     mkdirSync( path.join.apply(null, parts.slice(0, i)) );
   }
