@@ -8,6 +8,10 @@
  *  
  */
 
+// ToDo: prepend storage path with the domain
+// ToDo: floating issue with folder/file operation handling (empty filename?)
+// ToDo: log to file
+
 var map = {},
  http = require('http'),
  https = require('https'),
@@ -68,7 +72,7 @@ function processRequest(req, cb) {
 
 function proxyFile(baseUrl, targetDomain, cb) {
   var url = [targetDomain, baseUrl].join('');
-  var dest = [destBase, baseUrl].join('');
+  var dest = [destBase, baseUrl.split(/[?#]/)[0]].join('');
    
   var request = fetcher(url).get(url, function(response) {
     if (response.statusCode >= 300) {
