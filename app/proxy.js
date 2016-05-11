@@ -43,7 +43,6 @@ function init() {
     });
     res.on('end', function() {
       map = JSON.parse(body);
-      console.log(map);
     });
   }).on('error', function() {
     console.log('Failed to load proxy map');
@@ -71,6 +70,14 @@ function proxyFile(baseUrl, sourceDomain, cb) {
   var cleanDest = baseUrl.split(/[?#]/)[0];
   if (cleanDest[cleanDest.length-1] == '/') { cleanDest += 'x--root.html'; }
   var dest = [destBase, '/', sourceDomain, cleanDest].join('');
+  
+  try {
+    fs.accessSync(dest, fs.F_OK);
+    return cb({
+      contentType: mime.lookup(dest),
+      path: dest 
+    });
+  } catch (e) {}
    
   var request = fetcher(url).get(url, function(response) {
     if (response.statusCode >= 300) {
