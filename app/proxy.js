@@ -36,6 +36,10 @@ const destBase = conf.cachePath;
 
 
 function init() {
+  setInterval(fetchMap, 10*60*1000);
+}
+
+function fetchMap() {
   fetcher(conf.proxyMapUrl).get(conf.proxyMapUrl, function(res) {
     var body = '';
     res.on('data', function(chunk) {
@@ -45,6 +49,8 @@ function init() {
       map = JSON.parse(body);
     });
   }).on('error', function() {
+    // retry
+    setTimeout(fetchMap, 30*1000);
     console.log('Failed to load proxy map');
   });
 }
