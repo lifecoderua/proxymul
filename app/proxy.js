@@ -36,6 +36,7 @@ const destBase = conf.cachePath;
 
 
 function init() {
+  fetchMap();
   setInterval(fetchMap, 10*60*1000);
 }
 
