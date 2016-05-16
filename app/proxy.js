@@ -105,6 +105,10 @@ function proxyFile(baseUrl, sourceDomain, cb) {
   });
 }
 
+function fetchAndRespond(storeFile) {
+  
+}
+
 function fetcher(url) {
   return url.match(/^https/) ? https : http;
 }
