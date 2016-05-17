@@ -82,7 +82,7 @@ function proxyFile(baseUrl, sourceDomain, cb) {
     fs.accessSync(dest, fs.F_OK);
     return cb({
       contentType: mime.lookup(dest),
-      path: dest 
+      stream: fs.createReadStream(dest) 
     });
   } catch (e) {}
    
@@ -96,7 +96,7 @@ function proxyFile(baseUrl, sourceDomain, cb) {
     file.on('finish', function() {
       file.close(function() { cb({
         contentType: mime.lookup(dest),
-        path: dest 
+        stream: fs.createReadStream(dest) 
       }) });
     });
   }).on('error', function(err) {

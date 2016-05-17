@@ -19,9 +19,8 @@ function proxyResponseWrapper(res) {
       res.writeHead(result.error);
       res.end(); 
     } else {
-      res.writeHead(200, {'Content-Type': result.contentType});    
-      var readStream = fs.createReadStream(result.path);      
-      readStream.pipe(res);  
+      res.writeHead(200, {'Content-Type': result.contentType});  
+      result.stream.pipe(res);  
     }    
   }
 }
