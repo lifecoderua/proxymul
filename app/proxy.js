@@ -90,15 +90,27 @@ function proxyFile(baseUrl, sourceDomain, cb) {
     if (response.statusCode >= 300) {
       return cb({ error: 404, message: `Fetch failed (${response.statusCode}) from ${url}` });
     }
-    mkdirpSync(urlToPath(baseUrl, sourceDomain));
-    var file = fs.createWriteStream(dest);
-    response.pipe(file);
-    file.on('finish', function() {
-      file.close(function() { cb({
-        contentType: mime.lookup(dest),
-        stream: fs.createReadStream(dest) 
-      }) });
-    });
+    
+    switch(conf.storage) {
+      case 'file':
+        mkdirpSync(urlToPath(baseUrl, sourceDomain));
+        var file = fs.createWriteStream(dest);
+        response.pipe(file);
+        file.on('finish', function() {
+          file.close(function() { cb({
+            contentType: mime.lookup(dest),
+            stream: fs.createReadStream(dest) 
+          }) });
+        }); 
+        break;
+      
+      case 'none':
+      default:
+        return cb({
+          contentType: response.headers['Content-Type'],
+          stream: response
+        });
+    }    
   }).on('error', function(err) {
     fs.unlink(dest);
     if (cb) cb({ error: 404, message: err.message });
