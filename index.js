@@ -19,7 +19,7 @@ function proxyResponseWrapper(res) {
       res.writeHead(result.error);
       res.end(); 
     } else {
-      res.writeHead(200, {'Content-Type': result.contentType});  
+      res.writeHead(200, result.headers);  
       result.stream.pipe(res);  
     }    
   }
