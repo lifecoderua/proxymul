@@ -14,7 +14,8 @@ var map = {},
  fs = require('fs'),
  mime = require('mime-types'),
  path = require('path'),
- conf = require('./config');
+ conf = require('./config'),
+ cdn = require('./cdn');
 
 function mkdirSync(path) {
   try {
@@ -93,6 +94,8 @@ function proxyFile(baseUrl, sourceDomain, cb) {
     
     switch(conf.storage) {
       case 'file':
+        throw('Obsolete! Ensure it supports CDN upload prior to usage!');
+
         mkdirpSync(urlToPath(baseUrl, sourceDomain));
         var file = fs.createWriteStream(dest);
         response.pipe(file);
@@ -106,6 +109,14 @@ function proxyFile(baseUrl, sourceDomain, cb) {
       
       case 'none':
       default:
+        if (sourceDomain === conf.cdn.sourceDomain) {
+          var data = [];
+          response.on('data', function(chunk) { data.push(chunk); })
+          response.on('end', function() { 
+            data = Buffer.concat(data);
+            cdn.store(sourceDomain, baseUrl, data)  
+          })
+        }
         return cb({
           contentType: response.headers['Content-Type'],
           stream: response

@@ -2,5 +2,9 @@ module.exports = {
   port: 3000,
   header: 'proxy-host',
   cachePath: '/tmp/proxy_cache',
-  proxyMapUrl: 'http://localhost/api/v0/domains/map.json'
+  proxyMapUrl: 'http://localhost/api/v0/domains/map.json',
+  cdn: {
+    login: '12345',
+    key: 'SoMec00lKiiZera'
+  }
 };
