@@ -15,7 +15,9 @@ var map = {},
  mime = require('mime-types'),
  path = require('path'),
  conf = require('./config'),
- cdn = require('./cdn');
+ cdn = require('./cdn'),
+ _ = require('lodash'),
+ urlUtils = require('url');
 
 function mkdirSync(path) {
   try {
@@ -69,10 +71,12 @@ function processRequest(req, cb) {
     return cb({ error: 404 });
   }  
   
-  proxyFile(req.url, sourceDomain, cb);
+  proxyFile(req, sourceDomain, cb);
 }
 
-function proxyFile(baseUrl, sourceDomain, cb) {
+function proxyFile(req, sourceDomain, cb) {
+  var baseHeaders = _.clone(req.headers);
+  var baseUrl = req.url;
   var url = [map[sourceDomain], baseUrl].join('');
   // ToDo: use `path` if viable  
   var cleanDest = baseUrl.split(/[?#]/)[0];
@@ -87,7 +91,10 @@ function proxyFile(baseUrl, sourceDomain, cb) {
     });
   } catch (e) {}
    
-  var request = fetcher(url).get(url, function(response) {
+  var requestOptions = _.extend(urlUtils.parse(url), { headers: baseHeaders });
+  requestOptions.headers.host = requestOptions.hostname;
+
+  var request = fetcher(url).get(requestOptions, function(response) {
     if (response.statusCode >= 300) {
       return cb({ error: 404, message: `Fetch failed (${response.statusCode}) from ${url}` });
     }
@@ -101,7 +108,7 @@ function proxyFile(baseUrl, sourceDomain, cb) {
         response.pipe(file);
         file.on('finish', function() {
           file.close(function() { cb({
-            contentType: mime.lookup(dest),
+            headers: { 'Content-Type': mime.lookup(dest) },
             stream: fs.createReadStream(dest) 
           }) });
         }); 
@@ -118,7 +125,7 @@ function proxyFile(baseUrl, sourceDomain, cb) {
           })
         }
         return cb({
-          contentType: response.headers['Content-Type'],
+          headers: response.headers,
           stream: response
         });
     }    
